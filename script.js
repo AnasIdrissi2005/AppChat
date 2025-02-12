@@ -5,51 +5,9 @@ const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 const chatBox = document.getElementById('chat-box');
 const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-button');
-const searchIcon = document.getElementById('search-icon');
-const searchBox = document.getElementById('search-box');
-const searchInput = document.getElementById('search-input');
-const searchButton = document.getElementById('search-button');
-const searchResult = document.getElementById('search-result');
-const contactsList = document.getElementById('contacts-list');
 
 // جلب الرسائل من LocalStorage أو إنشاء مصفوفة فارغة
 let messages = JSON.parse(localStorage.getItem('messages')) || [];
-
-// جلب بيانات المستخدمين من LocalStorage
-const users = JSON.parse(localStorage.getItem('users')) || [];
-
-// عرض جهات الاتصال
-function displayContacts(filter = "") {
-    contactsList.innerHTML = ""; // مسح القائمة الحالية
-    users.forEach(user => {
-        if (user.username !== currentUser.username && user.username.includes(filter)) {
-            const contactItem = document.createElement('li');
-            contactItem.textContent = user.username;
-            contactItem.addEventListener('click', () => {
-                // عند النقر على جهة الاتصال، يمكنك إضافة وظيفة لفتح محادثة معها
-                alert(`فتح محادثة مع ${user.username}`);
-            });
-            contactsList.appendChild(contactItem);
-        }
-    });
-}
-
-// إظهار/إخفاء حقل البحث
-searchIcon.addEventListener('click', function () {
-    searchBox.style.display = searchBox.style.display === 'block' ? 'none' : 'block';
-});
-
-// البحث عن مستخدم
-searchButton.addEventListener('click', function () {
-    const searchTerm = searchInput.value.trim();
-    const userExists = users.some(user => user.username === searchTerm);
-
-    if (userExists) {
-        searchResult.textContent = `المستخدم "${searchTerm}" مسجل.`;
-    } else {
-        searchResult.textContent = `المستخدم "${searchTerm}" غير مسجل.`;
-    }
-});
 
 // عرض الرسائل السابقة
 function displayMessages() {
@@ -57,7 +15,10 @@ function displayMessages() {
     messages.forEach(message => {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message');
-        messageElement.innerHTML = `<strong>${message.sender}:</strong> ${message.text}`;
+        messageElement.innerHTML = `
+            <strong>${message.sender}:</strong> ${message.text}
+            <div class="timestamp">${message.timestamp}</div>
+        `;
         chatBox.appendChild(messageElement);
     });
     chatBox.scrollTop = chatBox.scrollHeight; // التمرير إلى الأسفل
@@ -89,6 +50,5 @@ messageInput.addEventListener('keydown', function (event) {
     }
 });
 
-// عرض جهات الاتصال والرسائل عند تحميل الصفحة
-displayContacts();
+// عرض الرسائل عند تحميل الصفحة
 displayMessages();
