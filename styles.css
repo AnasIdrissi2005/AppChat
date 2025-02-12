@@ -61,6 +61,16 @@ body {
     align-self: flex-start;
 }
 
+.message .sender-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.message.sent .sender-name {
+    color: white;
+}
+
 .timestamp {
     font-size: 0.8rem;
     color: #777;
