@@ -6,7 +6,7 @@ body {
     align-items: center;
     height: 100vh;
     background-color: #f0f0f0;
-    font-family: Arial, sans-serif;
+    font-family: 'Poppins', sans-serif;
 }
 
 .login-container {
@@ -16,6 +16,7 @@ body {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     width: 300px;
     text-align: center;
+    transition: all 0.3s ease;
 }
 
 .login-container h1 {
@@ -41,6 +42,12 @@ body {
     border: 1px solid #ddd;
     border-radius: 5px;
     font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.input-group input:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
 }
 
 button {
@@ -52,6 +59,7 @@ button {
     border-radius: 5px;
     font-size: 1rem;
     cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 button:hover {
@@ -60,6 +68,18 @@ button:hover {
 
 .error-message {
     color: red;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+.success-message {
+    color: #4CAF50;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+.warning-message {
+    color: #ff9800;
     margin-top: 10px;
     font-size: 0.9rem;
 }
@@ -74,8 +94,17 @@ button:hover {
     text-decoration: none;
     margin-bottom: 10px;
     font-size: 0.9rem;
+    transition: color 0.3s ease;
 }
 
 .links a:hover {
+    color: #45a049;
     text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        width: 90%;
+        padding: 15px;
+    }
 }
