@@ -15,8 +15,18 @@ function displayMessages() {
     messages.forEach(message => {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message');
+
+        // تحديد إذا كانت الرسالة مرسلة من المستخدم الحالي
+        if (message.sender === currentUser.username) {
+            messageElement.classList.add('sent');
+        } else {
+            messageElement.classList.add('received');
+        }
+
+        // إضافة اسم المرسل ونص الرسالة والوقت
         messageElement.innerHTML = `
-            <strong>${message.sender}:</strong> ${message.text}
+            <div class="sender-name">${message.sender}</div>
+            <div class="message-text">${message.text}</div>
             <div class="timestamp">${message.timestamp}</div>
         `;
         chatBox.appendChild(messageElement);
