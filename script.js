@@ -47,6 +47,8 @@ function sendMessage() {
         localStorage.setItem('messages', JSON.stringify(messages)); // حفظ الرسائل في LocalStorage
         messageInput.value = ""; // مسح حقل الإدخال
         displayMessages(); // عرض الرسائل المحدثة
+    } else {
+        console.error("حقل الرسالة فارغ!");
     }
 }
 
