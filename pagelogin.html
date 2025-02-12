@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول</title>
+    <link rel="stylesheet" href="styleslogin.css">
+</head>
+<body>
+    <div class="login-container">
+        <h1>تسجيل الدخول</h1>
+        <form id="login-form">
+            <div class="input-group">
+                <label for="username">اسم المستخدم:</label>
+                <input type="text" id="username" name="username" required />
+            </div>
+            <div class="input-group">
+                <label for="password">كلمة المرور:</label>
+                <input type="password" id="password" name="password" required />
+            </div>
+            <button type="submit">تسجيل الدخول</button>
+        </form>
+        <p id="error-message" class="error-message"></p>
+        <!-- روابط إضافية -->
+        <div class="links">
+            <a href="forgot-password.html">نسيت كلمة المرور؟</a>
+            <a href="signup.html">إنشاء حساب جديد</a>
+        </div>
+    </div>
+    <script src="scriptlogin.js"></script>
+</body>
+</html>

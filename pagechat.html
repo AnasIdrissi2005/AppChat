@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الدردشة</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- إضافة مكتبة أيقونات Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- قسم جهات الاتصال -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>جهات الاتصال</h2>
+                <i class="fas fa-search search-icon" id="search-icon"></i>
+            </div>
+            <div class="search-box" id="search-box">
+                <input type="text" id="search-input" placeholder="ابحث عن مستخدم..." />
+                <button id="search-button">بحث</button>
+            </div>
+            <p id="search-result" class="search-result"></p>
+            <ul id="contacts-list">
+                <!-- جهات الاتصال ستظهر هنا -->
+            </ul>
+        </div>
+
+        <!-- قسم الدردشة -->
+        <div class="main-content">
+            <h1>مرحبًا بك في الدردشة</h1>
+            <div id="chat-box" class="chat-box">
+                <!-- الرسائل ستظهر هنا -->
+            </div>
+            <div class="input-group">
+                <input type="text" id="message-input" placeholder="اكتب رسالتك..." />
+                <button id="send-button">إرسال</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
