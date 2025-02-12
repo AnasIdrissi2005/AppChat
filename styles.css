@@ -10,126 +10,29 @@ body {
 }
 
 .chat-container {
-    display: flex;
     background-color: #ffffff;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    width: 800px;
-    height: 600px;
+    width: 600px;
+    height: 500px;
     transition: all 0.3s ease;
 }
 
-.sidebar {
-    width: 30%;
-    border-right: 1px solid #ddd;
-    padding-right: 20px;
-}
-
-.sidebar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.sidebar-header h2 {
-    margin: 0;
-    font-size: 1.2rem;
-    color: #333;
-}
-
-.search-icon {
-    cursor: pointer;
-    font-size: 1.2rem;
-    color: #4CAF50;
-    transition: color 0.3s ease;
-}
-
-.search-icon:hover {
-    color: #45a049;
-}
-
-.search-box {
-    display: none;
-    margin-bottom: 10px;
-    opacity: 0;
-    transform: translateY(-10px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.search-box.visible {
-    display: block;
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.search-box input {
-    width: 70%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
-    transition: border-color 0.3s ease;
-}
-
-.search-box input:focus {
-    border-color: #4CAF50;
-    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
-}
-
-.search-box button {
-    width: 25%;
-    padding: 10px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.search-box button:hover {
-    background-color: #45a049;
-}
-
-.search-result {
-    color: #333;
-    font-size: 0.9rem;
-    margin-bottom: 10px;
-}
-
-.sidebar ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-}
-
-.sidebar ul li {
-    padding: 10px;
-    cursor: pointer;
-    border-bottom: 1px solid #ddd;
-    transition: background-color 0.3s ease;
-}
-
-.sidebar ul li:hover {
-    background-color: #f9f9f9;
-}
-
 .main-content {
-    width: 70%;
-    padding-left: 20px;
+    width: 100%;
+    padding: 10px;
 }
 
 .main-content h1 {
     margin-bottom: 20px;
     font-size: 1.5rem;
     color: #333;
+    text-align: center;
 }
 
 .chat-box {
-    height: 400px;
+    height: 350px;
     border: 1px solid #ddd;
     border-radius: 5px;
     padding: 10px;
@@ -200,13 +103,7 @@ body {
 
 @media (max-width: 768px) {
     .chat-container {
-        flex-direction: column;
-        width: 100%;
-        height: 100vh;
-        border-radius: 0;
-    }
-    .sidebar, .main-content {
-        width: 100%;
-        padding: 10px;
+        width: 90%;
+        height: 90vh;
     }
 }
