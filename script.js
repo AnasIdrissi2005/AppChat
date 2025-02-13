@@ -1,3 +1,18 @@
+// بيانات التكوين من Firebase Console
+const firebaseConfig = {
+    apiKey: "AIzaSyD_poLBfcbU2qLiqrrVMPIY3KoytebvKC8",
+    authDomain: "chat-sit.firebaseapp.com",
+    projectId: "chat-sit",
+    storageBucket: "chat-sit.appspot.com",
+    messagingSenderId: "174491469797",
+    appId: "1:174491469797:web:367414d6ef72ed44a4110c",
+    measurementId: "G-94ZCDD324Q"
+};
+
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
 // جلب معلومات المستخدم الحالي
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
@@ -6,13 +21,11 @@ const chatBox = document.getElementById('chat-box');
 const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-button');
 
-// جلب الرسائل من LocalStorage أو إنشاء مصفوفة فارغة
-let messages = JSON.parse(localStorage.getItem('messages')) || [];
-
 // عرض الرسائل السابقة
-function displayMessages() {
+database.ref('messages').on('value', (snapshot) => {
+    const messages = snapshot.val() || [];
     chatBox.innerHTML = ""; // مسح المحتوى الحالي
-    messages.forEach(message => {
+    Object.values(messages).forEach(message => {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message');
 
@@ -32,7 +45,7 @@ function displayMessages() {
         chatBox.appendChild(messageElement);
     });
     chatBox.scrollTop = chatBox.scrollHeight; // التمرير إلى الأسفل
-}
+});
 
 // إرسال رسالة جديدة
 function sendMessage() {
@@ -43,10 +56,8 @@ function sendMessage() {
             text: messageText,
             timestamp: new Date().toLocaleTimeString()
         };
-        messages.push(newMessage); // إضافة الرسالة إلى المصفوفة
-        localStorage.setItem('messages', JSON.stringify(messages)); // حفظ الرسائل في LocalStorage
+        database.ref('messages').push(newMessage); // إضافة الرسالة إلى Firebase
         messageInput.value = ""; // مسح حقل الإدخال
-        displayMessages(); // عرض الرسائل المحدثة
     } else {
         console.error("حقل الرسالة فارغ!");
     }
@@ -61,6 +72,3 @@ messageInput.addEventListener('keydown', function (event) {
         sendMessage();
     }
 });
-
-// عرض الرسائل عند تحميل الصفحة
-displayMessages();
