@@ -6,13 +6,15 @@
     <title>دردشة المجموعة</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- إضافة HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.0"></script>
 </head>
 <body>
     <div class="chat-container">
         <!-- قسم الدردشة -->
         <div class="main-content">
             <h1>دردشة المجموعة</h1>
-            <div id="chat-box" class="chat-box">
+            <div id="chat-box">
                 <!-- الرسائل ستظهر هنا -->
             </div>
             <div class="input-group">
@@ -21,6 +23,10 @@
             </div>
         </div>
     </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
