@@ -1,74 +1,84 @@
-// بيانات التكوين من Firebase Console
-const firebaseConfig = {
-    apiKey: "AIzaSyD_poLBfcbU2qLiqrrVMPIY3KoytebvKC8",
-    authDomain: "chat-sit.firebaseapp.com",
-    projectId: "chat-sit",
-    storageBucket: "chat-sit.appspot.com",
-    messagingSenderId: "174491469797",
-    appId: "1:174491469797:web:367414d6ef72ed44a4110c",
-    measurementId: "G-94ZCDD324Q"
-};
+// script.js
+import { auth, db } from "./firebase-init.js";
+import {
+  onAuthStateChanged,
+  signOut,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  limit,
+  onSnapshot,
+  serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+const chatBox = document.getElementById("chat-box");
+const messageInput = document.getElementById("message-input");
+const sendButton = document.getElementById("send-button");
+const logoutButton = document.getElementById("logout-button");
 
-// جلب معلومات المستخدم الحالي
-const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+const messagesCol = collection(db, "messages");
+const messagesQ = query(messagesCol, orderBy("createdAt", "asc"), limit(100));
 
-// جلب عناصر DOM
-const chatBox = document.getElementById('chat-box');
-const messageInput = document.getElementById('message-input');
-const sendButton = document.getElementById('send-button');
+function addMessageToUI(msg, isMine) {
+  const wrap = document.createElement("div");
+  wrap.className = `message ${isMine ? "sent" : "received"}`;
 
-// عرض الرسائل السابقة
-database.ref('messages').on('value', (snapshot) => {
-    const messages = snapshot.val() || [];
-    chatBox.innerHTML = ""; // مسح المحتوى الحالي
-    Object.values(messages).forEach(message => {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message');
+  const sender = document.createElement("div");
+  sender.className = "sender-name";
+  sender.textContent = msg.displayName || "Unknown";
 
-        // تحديد إذا كانت الرسالة مرسلة من المستخدم الحالي
-        if (message.sender === currentUser.username) {
-            messageElement.classList.add('sent');
-        } else {
-            messageElement.classList.add('received');
-        }
+  const text = document.createElement("div");
+  text.textContent = msg.text;
 
-        // إضافة اسم المرسل ونص الرسالة والوقت
-        messageElement.innerHTML = `
-            <div class="sender-name">${message.sender}</div>
-            <div class="message-text">${message.text}</div>
-            <div class="timestamp">${message.timestamp}</div>
-        `;
-        chatBox.appendChild(messageElement);
-    });
-    chatBox.scrollTop = chatBox.scrollHeight; // التمرير إلى الأسفل
-});
+  const time = document.createElement("div");
+  time.className = "timestamp";
+  time.textContent = msg.createdAt?.toDate
+    ? msg.createdAt.toDate().toLocaleTimeString()
+    : "";
 
-// إرسال رسالة جديدة
-function sendMessage() {
-    const messageText = messageInput.value.trim();
-    if (messageText) {
-        const newMessage = {
-            sender: currentUser.username,
-            text: messageText,
-            timestamp: new Date().toLocaleTimeString()
-        };
-        database.ref('messages').push(newMessage); // إضافة الرسالة إلى Firebase
-        messageInput.value = ""; // مسح حقل الإدخال
-    } else {
-        console.error("حقل الرسالة فارغ!");
-    }
+  wrap.append(sender, text, time);
+  chatBox.appendChild(wrap);
 }
 
-// إرسال الرسالة عند الضغط على زر الإرسال
-sendButton.addEventListener('click', sendMessage);
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.href = "pagelogin.html";
+    return;
+  }
 
-// إرسال الرسالة عند الضغط على مفتاح Enter
-messageInput.addEventListener('keydown', function (event) {
-    if (event.key === 'Enter') {
-        sendMessage();
-    }
+  onSnapshot(messagesQ, (snap) => {
+    chatBox.innerHTML = "";
+    snap.forEach((doc) => {
+      const data = doc.data();
+      addMessageToUI(data, data.uid === user.uid);
+    });
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
+});
+
+async function sendMessage() {
+  const user = auth.currentUser;
+  const text = messageInput.value.trim();
+  if (!user || !text) return;
+
+  await addDoc(messagesCol, {
+    text,
+    uid: user.uid,
+    displayName: user.displayName || user.email,
+    createdAt: serverTimestamp(),
+  });
+
+  messageInput.value = "";
+}
+
+sendButton.addEventListener("click", sendMessage);
+messageInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
+logoutButton.addEventListener("click", async () => {
+  await signOut(auth);
+  window.location.href = "pagelogin.html";
 });
