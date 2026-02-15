@@ -33,7 +33,7 @@ export function uploadChatImage({ file, roomId, uid, onProgress }) {
 
 export function uploadAvatar({ file, uid, onProgress }) {
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-  const avatarPath = `avatars/${uid}.${ext}`;
+  const avatarPath = `avatars/${uid}/${Date.now()}.${ext}`;
   const storageRef = ref(storage, avatarPath);
   const task = uploadBytesResumable(storageRef, file);
 

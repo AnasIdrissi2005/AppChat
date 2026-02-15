@@ -31,7 +31,19 @@ service cloud.firestore {
     match /messages/{messageId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && request.resource.data.uid == request.auth.uid;
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.roomId == "global"
+        && (
+          (request.resource.data.type == "text"
+            && request.resource.data.text is string
+            && request.resource.data.text.size() > 0)
+          ||
+          (request.resource.data.type == "image"
+            && request.resource.data.imageUrl is string
+            && request.resource.data.imageUrl.size() > 0
+            && request.resource.data.imagePath is string
+            && request.resource.data.imagePath.size() > 0)
+        );
       allow update, delete: if request.auth != null
         && resource.data.uid == request.auth.uid;
     }
@@ -70,9 +82,9 @@ service firebase.storage {
       allow write: if request.auth != null && request.auth.uid == uid;
     }
 
-    match /avatars/{fileName} {
+    match /avatars/{uid}/{fileName} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
     }
   }
 }

@@ -2,16 +2,13 @@ import { auth, db } from "./firebase-init.js";
 import { initTypingManager } from "./typing.js";
 import { createReadsManager } from "./reads.js";
 import { uploadChatImage } from "./storage.js";
-import {
-  onAuthStateChanged,
-  signOut,
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import {
   addDoc,
   collection,
   deleteDoc,
   doc,
-  limit,
+  limitToLast,
   onSnapshot,
   orderBy,
   query,
@@ -39,7 +36,7 @@ const messagesQuery = query(
   collection(db, "messages"),
   where("roomId", "==", ROOM_ID),
   orderBy("createdAt", "asc"),
-  limit(150)
+  limitToLast(100)
 );
 
 const usersMap = new Map();
@@ -49,6 +46,15 @@ let typingManager = null;
 let readsManager = null;
 let readsMap = new Map();
 let renderedMessages = [];
+
+function logFirebaseError(context, error) {
+  const code = error?.code || "unknown";
+  if (code === "permission-denied") {
+    console.error(`[${context}] permission-denied: تحقق من قواعد Firestore/Storage`, error);
+    return;
+  }
+  console.error(`[${context}]`, error);
+}
 
 function getInitials(nameOrEmail = "?") {
   const text = (nameOrEmail || "?").trim();
@@ -79,8 +85,8 @@ function setImagePreview(file) {
 function createAvatar(data) {
   const avatarWrap = document.createElement("div");
   avatarWrap.className = "avatar";
-
   const photoURL = data.photoURL || usersMap.get(data.uid)?.photoURL;
+
   if (photoURL) {
     const img = document.createElement("img");
     img.src = photoURL;
@@ -96,11 +102,9 @@ function createAvatar(data) {
 function createStatusRow(msg) {
   const meta = document.createElement("div");
   meta.className = "timestamp";
-
   const created = msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString() : "";
   const editedLabel = msg.editedAt ? " • تم التعديل" : "";
   meta.textContent = `${created}${editedLabel}`;
-
   return meta;
 }
 
@@ -166,27 +170,35 @@ function createBubbleContent(messageId, msg, isMine) {
   }
 
   bubble.appendChild(createStatusRow(msg));
-
   const readStatus = document.createElement("div");
   readStatus.className = "read-status";
   bubble.appendChild(readStatus);
-
   return bubble;
 }
 
 function renderPendingBubble(localId, payload) {
+  const existing = chatBox.querySelector(`.pending-row[data-local-id="${localId}"]`);
+  if (existing) existing.remove();
+
   const row = document.createElement("div");
   row.className = "message-row mine pending-row";
   row.dataset.localId = localId;
 
-  const avatar = createAvatar({ uid: auth.currentUser?.uid, displayName: auth.currentUser?.displayName, photoURL: auth.currentUser?.photoURL });
+  const avatar = createAvatar({
+    uid: auth.currentUser?.uid,
+    displayName: auth.currentUser?.displayName,
+    photoURL: auth.currentUser?.photoURL,
+  });
+
   const bubble = document.createElement("div");
   bubble.className = "message sent pending";
 
-  const textEl = document.createElement("div");
-  textEl.className = "message-text";
-  textEl.textContent = payload.text || "";
-  if (payload.text) bubble.appendChild(textEl);
+  if (payload.text) {
+    const textEl = document.createElement("div");
+    textEl.className = "message-text";
+    textEl.textContent = payload.text;
+    bubble.appendChild(textEl);
+  }
 
   if (payload.imageFile) {
     const tempImg = document.createElement("img");
@@ -237,18 +249,31 @@ function removePending(localId) {
   pendingMap.delete(localId);
 }
 
+function clearMatchedPending(messages, currentUid) {
+  const seenClientIds = new Set(
+    messages
+      .filter((msg) => msg.uid === currentUid && msg.clientMessageId)
+      .map((msg) => msg.clientMessageId)
+  );
+
+  pendingMap.forEach((pending, localId) => {
+    if (pending.clientMessageId && seenClientIds.has(pending.clientMessageId)) {
+      removePending(localId);
+    }
+  });
+}
+
 function renderMessages(messages, currentUid) {
   renderedMessages = messages;
-  chatBox.innerHTML = "";
+  clearMatchedPending(messages, currentUid);
 
+  chatBox.innerHTML = "";
   messages.forEach((msg) => {
     const isMine = msg.uid === currentUid;
     const row = document.createElement("div");
     row.className = `message-row ${isMine ? "mine" : "other"}`;
-
     const avatar = createAvatar(msg);
     const bubble = createBubbleContent(msg.id, msg, isMine);
-
     row.append(avatar, bubble);
     chatBox.appendChild(row);
   });
@@ -294,7 +319,6 @@ function openEdit(messageEl) {
   if (!textEl) return;
 
   messageEl.classList.add("editing");
-
   const editWrap = document.createElement("div");
   editWrap.className = "edit-wrap";
 
@@ -333,14 +357,16 @@ async function sendMessagePayload(payload, existingLocalId = null) {
   if (!user) return;
 
   const localId = existingLocalId || `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const clientMessageId = payload.clientMessageId || `client_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
+  payload.clientMessageId = clientMessageId;
   pendingMap.set(localId, payload);
-  if (!existingLocalId) renderPendingBubble(localId, payload);
+  renderPendingBubble(localId, payload);
 
   try {
     let imageData = null;
     if (payload.imageFile) {
-      pendingMap.get(localId).uploading = true;
+      payload.uploading = true;
       const pendingLabel = chatBox.querySelector(`.pending-row[data-local-id="${localId}"] .pending-label`);
       if (pendingLabel) pendingLabel.textContent = "جاري رفع الصورة...";
 
@@ -358,6 +384,7 @@ async function sendMessagePayload(payload, existingLocalId = null) {
 
     await addDoc(collection(db, "messages"), {
       roomId: ROOM_ID,
+      clientMessageId,
       type: imageData ? "image" : "text",
       text: payload.text || "",
       imageUrl: imageData?.imageUrl || "",
@@ -368,7 +395,6 @@ async function sendMessagePayload(payload, existingLocalId = null) {
       createdAt: serverTimestamp(),
     });
 
-    removePending(localId);
     uploadProgressEl.textContent = "";
     if (!existingLocalId) {
       messageInput.value = "";
@@ -376,8 +402,9 @@ async function sendMessagePayload(payload, existingLocalId = null) {
       setImagePreview(null);
       imageInput.value = "";
     }
+    // pending is removed only when matching Firestore doc arrives
   } catch (error) {
-    console.error(error);
+    logFirebaseError("sendMessagePayload", error);
     markPendingFailed(localId);
     uploadProgressEl.textContent = "";
   }
@@ -387,12 +414,7 @@ async function sendCurrentMessage() {
   const text = messageInput.value.trim();
   if (!text && !selectedImageFile) return;
 
-  const payload = {
-    text,
-    imageFile: selectedImageFile,
-  };
-
-  await sendMessagePayload(payload);
+  await sendMessagePayload({ text, imageFile: selectedImageFile });
 }
 
 chatBox.addEventListener("click", async (event) => {
@@ -413,34 +435,32 @@ chatBox.addEventListener("click", async (event) => {
   const currentUid = auth.currentUser?.uid;
   if (!currentUid || messageEl.dataset.uid !== currentUid) return;
 
-  if (target.dataset.action === "edit") {
-    openEdit(messageEl);
-    return;
-  }
-
-  if (target.dataset.action === "cancel-edit") {
-    cancelEdit(messageEl);
-    return;
-  }
+  if (target.dataset.action === "edit") return void openEdit(messageEl);
+  if (target.dataset.action === "cancel-edit") return void cancelEdit(messageEl);
 
   if (target.dataset.action === "save-edit") {
     const newText = messageEl.querySelector(".edit-input")?.value.trim();
     const id = messageEl.dataset.id;
     if (!id || !newText) return;
 
-    await updateDoc(doc(db, "messages", id), {
-      text: newText,
-      editedAt: serverTimestamp(),
-    });
-    cancelEdit(messageEl);
+    try {
+      await updateDoc(doc(db, "messages", id), { text: newText, editedAt: serverTimestamp() });
+      cancelEdit(messageEl);
+    } catch (error) {
+      logFirebaseError("updateMessage", error);
+    }
     return;
   }
 
   if (target.dataset.action === "delete") {
     const id = messageEl.dataset.id;
-    if (!id) return;
-    if (!window.confirm("هل تريد حذف هذه الرسالة؟")) return;
-    await deleteDoc(doc(db, "messages", id));
+    if (!id || !window.confirm("هل تريد حذف هذه الرسالة؟")) return;
+
+    try {
+      await deleteDoc(doc(db, "messages", id));
+    } catch (error) {
+      logFirebaseError("deleteMessage", error);
+    }
   }
 });
 
@@ -508,13 +528,14 @@ onAuthStateChanged(auth, (user) => {
     },
   });
 
-  onSnapshot(messagesQuery, (snap) => {
-    const messages = [];
-    snap.forEach((messageDoc) => {
-      const data = messageDoc.data();
-      messages.push({ ...data, id: messageDoc.id });
-    });
-    renderMessages(messages, user.uid);
-    readsManager.maybeMarkSeen(true);
-  });
+  onSnapshot(
+    messagesQuery,
+    (snap) => {
+      const messages = [];
+      snap.forEach((messageDoc) => messages.push({ ...messageDoc.data(), id: messageDoc.id }));
+      renderMessages(messages, user.uid);
+      readsManager.maybeMarkSeen(true);
+    },
+    (error) => logFirebaseError("messagesListener", error)
+  );
 });
