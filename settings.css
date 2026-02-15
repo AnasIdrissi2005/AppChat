@@ -1,0 +1,54 @@
+.settings-page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: #eef2f7;
+}
+
+.settings-card {
+  width: min(560px, 95vw);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+  padding: clamp(14px, 3vw, 24px);
+  display: grid;
+  gap: 10px;
+}
+
+.settings-card input,
+.settings-card button {
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 0 12px;
+  font-size: 16px;
+}
+
+.settings-card button {
+  border: none;
+  background: #16a34a;
+  color: #fff;
+  cursor: pointer;
+}
+
+.avatar-preview {
+  width: 68px;
+  height: 68px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.hidden { display: none; }
+
+.settings-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.settings-status {
+  min-height: 20px;
+  color: #374151;
+}

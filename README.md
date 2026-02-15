@@ -8,9 +8,21 @@ After enabling GitHub Pages (Source: **GitHub Actions**) this project is availab
 
 If the site is not yet visible, wait for the `pages.yml` workflow to finish successfully in the Actions tab.
 
-## Firestore Security Rules (Owner-only edit/delete)
+## New Features
 
-To keep message editing/deletion safe, configure your Firestore rules so only the author of a message can update or delete it:
+- Optimistic sending state with pending/failure/retry for text and image messages.
+- Typing indicator via Firestore `typing` collection.
+- Group read receipts via Firestore `reads` collection.
+- Image upload in chat via Firebase Storage.
+- Settings page (`settings.html`) to update display name and avatar.
+
+## Firebase setup notes
+
+1. Enable **Firestore Database** and **Storage** in your Firebase project.
+2. In Authentication, add your GitHub Pages domain to authorized domains.
+3. Ensure `firebase-init.js` has a valid `storageBucket`.
+
+## Firestore Security Rules (suggested)
 
 ```txt
 rules_version = '2';
@@ -23,8 +35,47 @@ service cloud.firestore {
       allow update, delete: if request.auth != null
         && resource.data.uid == request.auth.uid;
     }
+
+    match /typing/{typingId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /reads/{readId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
   }
 }
 ```
 
-This prevents anonymous/public users from editing or deleting other users' messages.
+## Storage Rules (suggested)
+
+```txt
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /chat_images/{roomId}/{uid}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /avatars/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+  }
+}
+```
+
+Do not use publicly writable rules in production.
