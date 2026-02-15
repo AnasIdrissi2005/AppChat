@@ -18,20 +18,9 @@
     </header>
 
     <section id="chat-box" class="chat-box" aria-live="polite"></section>
-
     <div id="typing-indicator" class="typing-indicator" aria-live="polite"></div>
 
-    <div id="image-preview" class="image-preview hidden">
-      <img id="image-preview-img" alt="معاينة الصورة" />
-      <div class="image-preview-actions">
-        <span id="upload-progress" class="upload-progress"></span>
-        <button id="cancel-image-button" type="button">إلغاء الصورة</button>
-      </div>
-    </div>
-
     <footer class="input-group composer">
-      <button id="attach-image-button" class="attach-btn" type="button" aria-label="إرفاق صورة">📎</button>
-      <input id="image-input" type="file" accept="image/*" hidden />
       <textarea id="message-input" placeholder="اكتب رسالة..." rows="1"></textarea>
       <button id="send-button" type="button">إرسال</button>
     </footer>

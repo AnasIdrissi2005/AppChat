@@ -29,7 +29,6 @@ form.addEventListener("submit", async (e) => {
       {
         uid: cred.user.uid,
         displayName: username,
-        photoURL: cred.user.photoURL || "",
         updatedAt: serverTimestamp(),
       },
       { merge: true }

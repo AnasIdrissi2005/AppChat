@@ -1,7 +1,6 @@
 import { auth, db } from "./firebase-init.js";
 import { initTypingManager } from "./typing.js";
 import { createReadsManager } from "./reads.js";
-import { uploadChatImage } from "./storage.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import {
   addDoc,
@@ -24,12 +23,6 @@ const chatBox = document.getElementById("chat-box");
 const messageInput = document.getElementById("message-input");
 const sendButton = document.getElementById("send-button");
 const logoutButton = document.getElementById("logout-button");
-const attachImageButton = document.getElementById("attach-image-button");
-const imageInput = document.getElementById("image-input");
-const imagePreview = document.getElementById("image-preview");
-const imagePreviewImg = document.getElementById("image-preview-img");
-const cancelImageButton = document.getElementById("cancel-image-button");
-const uploadProgressEl = document.getElementById("upload-progress");
 const typingIndicator = document.getElementById("typing-indicator");
 
 const messagesQuery = query(
@@ -41,7 +34,6 @@ const messagesQuery = query(
 
 const usersMap = new Map();
 const pendingMap = new Map();
-let selectedImageFile = null;
 let typingManager = null;
 let readsManager = null;
 let readsMap = new Map();
@@ -50,7 +42,7 @@ let renderedMessages = [];
 function logFirebaseError(context, error) {
   const code = error?.code || "unknown";
   if (code === "permission-denied") {
-    console.error(`[${context}] permission-denied: تحقق من قواعد Firestore/Storage`, error);
+    console.error(`[${context}] permission-denied: تحقق من قواعد Firestore`, error);
     return;
   }
   console.error(`[${context}]`, error);
@@ -69,33 +61,11 @@ function autoResizeTextarea() {
   messageInput.style.height = `${Math.min(messageInput.scrollHeight, 120)}px`;
 }
 
-function setImagePreview(file) {
-  selectedImageFile = file;
-  if (!file) {
-    imagePreview.classList.add("hidden");
-    imagePreviewImg.src = "";
-    uploadProgressEl.textContent = "";
-    return;
-  }
-
-  imagePreviewImg.src = URL.createObjectURL(file);
-  imagePreview.classList.remove("hidden");
-}
-
 function createAvatar(data) {
   const avatarWrap = document.createElement("div");
   avatarWrap.className = "avatar";
-  const photoURL = data.photoURL || usersMap.get(data.uid)?.photoURL;
-
-  if (photoURL) {
-    const img = document.createElement("img");
-    img.src = photoURL;
-    img.alt = data.displayName || "avatar";
-    avatarWrap.appendChild(img);
-  } else {
-    avatarWrap.textContent = getInitials(data.displayName || data.uid || "?");
-  }
-
+  const displayName = data.displayName || usersMap.get(data.uid)?.displayName || data.uid || "?";
+  avatarWrap.textContent = getInitials(displayName);
   return avatarWrap;
 }
 
@@ -144,35 +114,15 @@ function createBubbleContent(messageId, msg, isMine) {
     header.appendChild(actions);
   }
 
-  bubble.appendChild(header);
+  const textEl = document.createElement("div");
+  textEl.className = "message-text";
+  textEl.textContent = msg.text || "";
 
-  if (msg.text) {
-    const textEl = document.createElement("div");
-    textEl.className = "message-text";
-    textEl.textContent = msg.text;
-    bubble.appendChild(textEl);
-  }
-
-  if (msg.imageUrl) {
-    const link = document.createElement("a");
-    link.href = msg.imageUrl;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.className = "message-image-link";
-
-    const img = document.createElement("img");
-    img.src = msg.imageUrl;
-    img.alt = "image";
-    img.className = "message-image";
-
-    link.appendChild(img);
-    bubble.appendChild(link);
-  }
-
-  bubble.appendChild(createStatusRow(msg));
+  bubble.append(header, textEl, createStatusRow(msg));
   const readStatus = document.createElement("div");
   readStatus.className = "read-status";
   bubble.appendChild(readStatus);
+
   return bubble;
 }
 
@@ -184,32 +134,18 @@ function renderPendingBubble(localId, payload) {
   row.className = "message-row mine pending-row";
   row.dataset.localId = localId;
 
-  const avatar = createAvatar({
-    uid: auth.currentUser?.uid,
-    displayName: auth.currentUser?.displayName,
-    photoURL: auth.currentUser?.photoURL,
-  });
-
+  const avatar = createAvatar({ uid: auth.currentUser?.uid, displayName: auth.currentUser?.displayName });
   const bubble = document.createElement("div");
   bubble.className = "message sent pending";
 
-  if (payload.text) {
-    const textEl = document.createElement("div");
-    textEl.className = "message-text";
-    textEl.textContent = payload.text;
-    bubble.appendChild(textEl);
-  }
-
-  if (payload.imageFile) {
-    const tempImg = document.createElement("img");
-    tempImg.src = URL.createObjectURL(payload.imageFile);
-    tempImg.className = "message-image";
-    bubble.appendChild(tempImg);
-  }
+  const textEl = document.createElement("div");
+  textEl.className = "message-text";
+  textEl.textContent = payload.text || "";
+  bubble.appendChild(textEl);
 
   const pendingLabel = document.createElement("div");
   pendingLabel.className = "pending-label";
-  pendingLabel.textContent = payload.uploading ? "جاري رفع الصورة..." : "جاري الإرسال…";
+  pendingLabel.textContent = "جاري الإرسال…";
   bubble.appendChild(pendingLabel);
 
   row.append(avatar, bubble);
@@ -220,7 +156,6 @@ function renderPendingBubble(localId, payload) {
 function markPendingFailed(localId) {
   const row = chatBox.querySelector(`.pending-row[data-local-id="${localId}"]`);
   if (!row) return;
-
   const bubble = row.querySelector(".message");
   bubble.classList.add("failed");
 
@@ -272,9 +207,7 @@ function renderMessages(messages, currentUid) {
     const isMine = msg.uid === currentUid;
     const row = document.createElement("div");
     row.className = `message-row ${isMine ? "mine" : "other"}`;
-    const avatar = createAvatar(msg);
-    const bubble = createBubbleContent(msg.id, msg, isMine);
-    row.append(avatar, bubble);
+    row.append(createAvatar(msg), createBubbleContent(msg.id, msg, isMine));
     chatBox.appendChild(row);
   });
 
@@ -296,21 +229,15 @@ function updateSeenStatus(currentUid) {
   readsMap.forEach((read) => {
     if (!read || read.uid === currentUid) return;
     const seenIndex = indexMap.get(read.lastSeenMessageId);
-    if (seenIndex !== undefined && seenIndex >= lastMineIndex) {
-      seenBy.push(read.displayName || "مستخدم");
-    }
+    if (seenIndex !== undefined && seenIndex >= lastMineIndex) seenBy.push(read.displayName || "مستخدم");
   });
 
   const lastEl = chatBox.querySelector(`.message[data-id="${lastMine.id}"] .read-status`);
   if (!lastEl) return;
 
-  if (!seenBy.length) {
-    lastEl.textContent = "تم الإرسال";
-  } else if (seenBy.length <= 2) {
-    lastEl.textContent = `شوهد بواسطة ${seenBy.join("، ")}`;
-  } else {
-    lastEl.textContent = "شوهد";
-  }
+  if (!seenBy.length) lastEl.textContent = "تم الإرسال";
+  else if (seenBy.length <= 2) lastEl.textContent = `شوهد بواسطة ${seenBy.join("، ")}`;
+  else lastEl.textContent = "شوهد";
 }
 
 function openEdit(messageEl) {
@@ -356,65 +283,42 @@ async function sendMessagePayload(payload, existingLocalId = null) {
   const user = auth.currentUser;
   if (!user) return;
 
+  const text = (payload.text || "").trim();
+  if (!text) return;
+
   const localId = existingLocalId || `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const clientMessageId = payload.clientMessageId || `client_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
   payload.clientMessageId = clientMessageId;
+  payload.text = text;
   pendingMap.set(localId, payload);
   renderPendingBubble(localId, payload);
 
   try {
-    let imageData = null;
-    if (payload.imageFile) {
-      payload.uploading = true;
-      const pendingLabel = chatBox.querySelector(`.pending-row[data-local-id="${localId}"] .pending-label`);
-      if (pendingLabel) pendingLabel.textContent = "جاري رفع الصورة...";
-
-      imageData = await uploadChatImage({
-        file: payload.imageFile,
-        roomId: ROOM_ID,
-        uid: user.uid,
-        onProgress: (progress) => {
-          const label = chatBox.querySelector(`.pending-row[data-local-id="${localId}"] .pending-label`);
-          if (label) label.textContent = `جاري رفع الصورة... ${progress}%`;
-          uploadProgressEl.textContent = `رفع الصورة: ${progress}%`;
-        },
-      });
-    }
-
     await addDoc(collection(db, "messages"), {
       roomId: ROOM_ID,
       clientMessageId,
-      type: imageData ? "image" : "text",
-      text: payload.text || "",
-      imageUrl: imageData?.imageUrl || "",
-      imagePath: imageData?.imagePath || "",
+      type: "text",
+      text,
       uid: user.uid,
       displayName: user.displayName || user.email,
-      photoURL: user.photoURL || "",
       createdAt: serverTimestamp(),
     });
 
-    uploadProgressEl.textContent = "";
     if (!existingLocalId) {
       messageInput.value = "";
       autoResizeTextarea();
-      setImagePreview(null);
-      imageInput.value = "";
     }
-    // pending is removed only when matching Firestore doc arrives
   } catch (error) {
     logFirebaseError("sendMessagePayload", error);
     markPendingFailed(localId);
-    uploadProgressEl.textContent = "";
   }
 }
 
 async function sendCurrentMessage() {
   const text = messageInput.value.trim();
-  if (!text && !selectedImageFile) return;
-
-  await sendMessagePayload({ text, imageFile: selectedImageFile });
+  if (!text) return;
+  await sendMessagePayload({ text });
 }
 
 chatBox.addEventListener("click", async (event) => {
@@ -444,7 +348,7 @@ chatBox.addEventListener("click", async (event) => {
     if (!id || !newText) return;
 
     try {
-      await updateDoc(doc(db, "messages", id), { text: newText, editedAt: serverTimestamp() });
+      await updateDoc(doc(db, "messages", id), { text: newText, editedAt: serverTimestamp(), type: "text" });
       cancelEdit(messageEl);
     } catch (error) {
       logFirebaseError("updateMessage", error);
@@ -472,17 +376,6 @@ messageInput.addEventListener("keydown", (e) => {
     e.preventDefault();
     sendCurrentMessage();
   }
-});
-
-attachImageButton.addEventListener("click", () => imageInput.click());
-imageInput.addEventListener("change", (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  setImagePreview(file);
-});
-cancelImageButton.addEventListener("click", () => {
-  setImagePreview(null);
-  imageInput.value = "";
 });
 
 logoutButton.addEventListener("click", async () => {
@@ -532,7 +425,11 @@ onAuthStateChanged(auth, (user) => {
     messagesQuery,
     (snap) => {
       const messages = [];
-      snap.forEach((messageDoc) => messages.push({ ...messageDoc.data(), id: messageDoc.id }));
+      snap.forEach((messageDoc) => {
+        const data = messageDoc.data();
+        if (data.type && data.type !== "text") return; // ignore old image messages safely
+        messages.push({ ...data, id: messageDoc.id });
+      });
       renderMessages(messages, user.uid);
       readsManager.maybeMarkSeen(true);
     },

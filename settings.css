@@ -33,15 +33,6 @@
   cursor: pointer;
 }
 
-.avatar-preview {
-  width: 68px;
-  height: 68px;
-  border-radius: 999px;
-  object-fit: cover;
-}
-
-.hidden { display: none; }
-
 .settings-actions {
   display: flex;
   gap: 12px;
