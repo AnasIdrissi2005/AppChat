@@ -1,9 +1,13 @@
-// script-signup.js
-import { auth } from "./firebase-init.js";
+import { auth, db } from "./firebase-init.js";
 import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  doc,
+  serverTimestamp,
+  setDoc,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const form = document.getElementById("signup-form");
 const errorEl = document.getElementById("error-message");
@@ -19,6 +23,17 @@ form.addEventListener("submit", async (e) => {
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName: username });
+
+    await setDoc(
+      doc(db, "users", cred.user.uid),
+      {
+        uid: cred.user.uid,
+        displayName: username,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
     window.location.href = "pagechat.html";
   } catch (err) {
     errorEl.textContent = "فشل إنشاء الحساب. جرّب بريدًا آخر أو كلمة مرور أقوى.";

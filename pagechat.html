@@ -2,25 +2,30 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Chat</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="./styles/app.css" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
-<body>
-  <div class="chat-container">
-    <div class="main-content">
+<body class="chat-page">
+  <main class="chat-container">
+    <header class="chat-header">
       <h1>دردشة المجموعة</h1>
-
-      <div id="chat-box" class="chat-box"></div>
-
-      <div class="input-group">
-        <input id="message-input" placeholder="اكتب رسالة..." />
-        <button id="send-button">إرسال</button>
-        <button id="logout-button" type="button">خروج</button>
+      <div class="header-actions">
+        <a class="settings-link" href="./settings.html">الإعدادات</a>
+        <button id="logout-button" type="button" class="logout-button">خروج</button>
       </div>
-    </div>
-  </div>
+    </header>
 
-  <script type="module" src="script.js"></script>
+    <section id="chat-box" class="chat-box" aria-live="polite"></section>
+    <div id="typing-indicator" class="typing-indicator" aria-live="polite"></div>
+
+    <footer class="input-group composer">
+      <textarea id="message-input" placeholder="اكتب رسالة..." rows="1"></textarea>
+      <button id="send-button" type="button">إرسال</button>
+    </footer>
+  </main>
+
+  <script type="module" src="./chat.js"></script>
 </body>
 </html>
