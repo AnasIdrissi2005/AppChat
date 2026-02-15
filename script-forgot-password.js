@@ -1,35 +1,22 @@
-// إضافة حدث عند إرسال النموذج
-document.getElementById('forgot-password-form').addEventListener('submit', function (event) {
-    event.preventDefault(); // منع إعادة تحميل الصفحة
+// script-forgot-password.js
+import { auth } from "./firebase-init.js";
+import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    const email = document.getElementById('email').value;
-    const errorMessage = document.getElementById('error-message');
+const form = document.getElementById("forgot-form");
+const msg = document.getElementById("msg");
+const err = document.getElementById("err");
 
-    // جلب بيانات المستخدمين من LocalStorage
-    const users = JSON.parse(localStorage.getItem('users')) || [];
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  msg.textContent = "";
+  err.textContent = "";
 
-    // التحقق من وجود البريد الإلكتروني
-    const user = users.find(user => user.email === email);
-    if (user) {
-        errorMessage.textContent = ""; // مسح رسالة الخطأ
+  const email = document.getElementById("email").value.trim();
 
-        // إنشاء رابط إعادة تعيين كلمة المرور
-        const resetLink = `https://anasidrissi2005.github.io/my-chat-app/reset-password.html?email=${encodeURIComponent(email)}`;
-
-        // إرسال البريد الإلكتروني باستخدام EmailJS
-        emailjs.send("service_wf9suux", "template_5by3x4k", {
-            to_email: email, // البريد الإلكتروني للمستلم
-            to_name: email,  // يمكنك استخدام البريد الإلكتروني كاسم المستلم
-            from_name: "Anas Idrissi", // اسم المرسل
-            reply_to: "anasidrissi05@gmail.com", // البريد الإلكتروني للرد
-            reset_link: resetLink // الرابط لإعادة تعيين كلمة المرور
-        })
-        .then(function(response) {
-            alert("تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني.");
-        }, function(error) {
-            errorMessage.textContent = "حدث خطأ أثناء إرسال البريد الإلكتروني. يرجى المحاولة مرة أخرى.";
-        });
-    } else {
-        errorMessage.textContent = "البريد الإلكتروني غير مسجل.";
-    }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    msg.textContent = "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.";
+  } catch (e2) {
+    err.textContent = "تعذر إرسال الرابط. تأكد من البريد الإلكتروني.";
+  }
 });
