@@ -1,32 +1,26 @@
-// إضافة حدث عند إرسال النموذج
-document.getElementById('signup-form').addEventListener('submit', function (event) {
-    event.preventDefault(); // منع إعادة تحميل الصفحة
+// script-signup.js
+import { auth } from "./firebase-init.js";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    const username = document.getElementById('username').value;
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const errorMessage = document.getElementById('error-message');
+const form = document.getElementById("signup-form");
+const errorEl = document.getElementById("error-message");
 
-    // التحقق من صحة البيانات
-    if (username && email && password) {
-        // جلب بيانات المستخدمين من LocalStorage
-        const users = JSON.parse(localStorage.getItem('users')) || [];
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorEl.textContent = "";
 
-        // التحقق من عدم وجود مستخدم بنفس الاسم
-        const existingUser = users.find(user => user.username === username);
-        if (existingUser) {
-            errorMessage.textContent = "اسم المستخدم موجود مسبقًا.";
-        } else {
-            // إضافة المستخدم الجديد
-            users.push({ username, email, password });
-            // حفظ البيانات في LocalStorage
-            localStorage.setItem('users', JSON.stringify(users));
-            errorMessage.textContent = ""; // مسح رسالة الخطأ
-            alert("تم إنشاء الحساب بنجاح!");
-            // توجيه المستخدم إلى صفحة تسجيل الدخول
-            window.location.href = "pagelogin.html";
-        }
-    } else {
-        errorMessage.textContent = "يرجى ملء جميع الحقول.";
-    }
+  const username = document.getElementById("username").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(cred.user, { displayName: username });
+    window.location.href = "pagechat.html";
+  } catch (err) {
+    errorEl.textContent = "فشل إنشاء الحساب. جرّب بريدًا آخر أو كلمة مرور أقوى.";
+  }
 });
