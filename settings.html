@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>الإعدادات</title>
+  <link rel="stylesheet" href="./styles/app.css" />
+  <link rel="stylesheet" href="./settings.css" />
+</head>
+<body class="settings-page">
+  <main class="settings-card">
+    <h1>إعدادات الحساب</h1>
+
+    <label for="display-name">الاسم الظاهر</label>
+    <input id="display-name" type="text" placeholder="اكتب الاسم الظاهر" />
+
+    <label for="avatar-input">الصورة الشخصية</label>
+    <input id="avatar-input" type="file" accept="image/*" />
+    <img id="avatar-preview" class="avatar-preview hidden" alt="avatar preview" />
+
+    <div id="settings-status" class="settings-status"></div>
+
+    <div class="settings-actions">
+      <button id="save-settings" type="button">حفظ</button>
+      <a href="./pagechat.html">العودة للدردشة</a>
+    </div>
+  </main>
+
+  <script type="module" src="./settings.js"></script>
+</body>
+</html>
