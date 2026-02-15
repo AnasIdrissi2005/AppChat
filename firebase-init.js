@@ -4,9 +4,9 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
+  apiKey: "AIzaSyBtwFDH02R0Wov_LFKGysUdc3_t0AJJ9jw",
+  authDomain: "newappchat-cf9e6.firebaseapp.com",
+  projectId: "newappchat-cf9e6",
 };
 
 export const app = initializeApp(firebaseConfig);
