@@ -1,32 +1,21 @@
-document.getElementById('login-form').addEventListener('submit', function (event) {
-    event.preventDefault(); // منع إعادة تحميل الصفحة
+// scriptlogin.js
+import { auth } from "./firebase-init.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const errorMessage = document.getElementById('error-message');
+const form = document.getElementById("login-form");
+const errorEl = document.getElementById("error-message");
 
-    // جلب بيانات المستخدمين من LocalStorage
-    const users = JSON.parse(localStorage.getItem('users')) || [];
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorEl.textContent = "";
 
-    // التحقق من وجود اسم المستخدم
-    const userExists = users.some(user => user.username === username);
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
 
-    if (!userExists) {
-        errorMessage.textContent = "اسم المستخدم غير مسجل.";
-        return;
-    }
-
-    // التحقق من صحة البيانات
-    const user = users.find(user => user.username === username && user.password === password);
-    if (user) {
-        errorMessage.textContent = ""; // مسح رسالة الخطأ
-
-        // تخزين معلومات المستخدم الحالي
-        localStorage.setItem('currentUser', JSON.stringify(user));
-
-        alert("تم تسجيل الدخول بنجاح!");
-        window.location.href = "pagechat.html"; // توجيه المستخدم إلى صفحة الدردشة
-    } else {
-        errorMessage.textContent = "كلمة المرور غير صحيحة.";
-    }
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    window.location.href = "pagechat.html";
+  } catch (err) {
+    errorEl.textContent = "فشل تسجيل الدخول. تحقق من البريد/كلمة المرور.";
+  }
 });
