@@ -12,6 +12,9 @@ import {
   limit,
   onSnapshot,
   serverTimestamp,
+  doc,
+  updateDoc,
+  deleteDoc,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const chatBox = document.getElementById("chat-box");
@@ -22,26 +25,171 @@ const logoutButton = document.getElementById("logout-button");
 const messagesCol = collection(db, "messages");
 const messagesQ = query(messagesCol, orderBy("createdAt", "asc"), limit(100));
 
-function addMessageToUI(msg, isMine) {
+function addMessageToUI(messageId, msg, isMine) {
   const wrap = document.createElement("div");
   wrap.className = `message ${isMine ? "sent" : "received"}`;
+  wrap.dataset.id = messageId;
+  wrap.dataset.uid = msg.uid || "";
+
+  const header = document.createElement("div");
+  header.className = "message-header";
 
   const sender = document.createElement("div");
   sender.className = "sender-name";
   sender.textContent = msg.displayName || "Unknown";
+  header.appendChild(sender);
+
+  if (isMine) {
+    const actions = document.createElement("div");
+    actions.className = "message-actions";
+
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "action-btn";
+    editBtn.textContent = "✏️";
+    editBtn.title = "تعديل";
+    editBtn.setAttribute("aria-label", "تعديل الرسالة");
+    editBtn.dataset.action = "edit";
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "action-btn";
+    deleteBtn.textContent = "🗑";
+    deleteBtn.title = "حذف";
+    deleteBtn.setAttribute("aria-label", "حذف الرسالة");
+    deleteBtn.dataset.action = "delete";
+
+    actions.append(editBtn, deleteBtn);
+    header.appendChild(actions);
+  }
 
   const text = document.createElement("div");
-  text.textContent = msg.text;
+  text.className = "message-text";
+  text.textContent = msg.text || "";
 
-  const time = document.createElement("div");
-  time.className = "timestamp";
-  time.textContent = msg.createdAt?.toDate
-    ? msg.createdAt.toDate().toLocaleTimeString()
-    : "";
+  const meta = document.createElement("div");
+  meta.className = "timestamp";
+  const created = msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString() : "";
+  const editedLabel = msg.editedAt ? " • تم التعديل" : "";
+  meta.textContent = `${created}${editedLabel}`;
 
-  wrap.append(sender, text, time);
+  wrap.append(header, text, meta);
   chatBox.appendChild(wrap);
 }
+
+function startEdit(messageEl) {
+  if (messageEl.classList.contains("editing")) return;
+  const textEl = messageEl.querySelector(".message-text");
+  if (!textEl) return;
+
+  const originalText = textEl.textContent || "";
+  messageEl.dataset.originalText = originalText;
+  messageEl.classList.add("editing");
+
+  const editWrap = document.createElement("div");
+  editWrap.className = "edit-wrap";
+
+  const editInput = document.createElement("input");
+  editInput.type = "text";
+  editInput.className = "edit-input";
+  editInput.value = originalText;
+  editInput.setAttribute("aria-label", "تعديل الرسالة");
+
+  const saveBtn = document.createElement("button");
+  saveBtn.type = "button";
+  saveBtn.className = "edit-btn save";
+  saveBtn.dataset.action = "save-edit";
+  saveBtn.textContent = "حفظ";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.className = "edit-btn cancel";
+  cancelBtn.dataset.action = "cancel-edit";
+  cancelBtn.textContent = "إلغاء";
+
+  editWrap.append(editInput, saveBtn, cancelBtn);
+
+  textEl.style.display = "none";
+  textEl.insertAdjacentElement("afterend", editWrap);
+
+  editInput.focus();
+  editInput.setSelectionRange(editInput.value.length, editInput.value.length);
+  editInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      saveBtn.click();
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      cancelBtn.click();
+    }
+  });
+}
+
+function cancelEdit(messageEl) {
+  const textEl = messageEl.querySelector(".message-text");
+  const editWrap = messageEl.querySelector(".edit-wrap");
+  if (editWrap) editWrap.remove();
+  if (textEl) textEl.style.display = "";
+  messageEl.classList.remove("editing");
+}
+
+async function saveEdit(messageEl) {
+  const id = messageEl.dataset.id;
+  const messageUid = messageEl.dataset.uid;
+  const currentUid = auth.currentUser?.uid;
+  if (!id || !currentUid || messageUid !== currentUid) return;
+
+  const editInput = messageEl.querySelector(".edit-input");
+  if (!editInput) return;
+
+  const newText = editInput.value.trim();
+  if (!newText) return;
+
+  await updateDoc(doc(db, "messages", id), {
+    text: newText,
+    editedAt: serverTimestamp(),
+  });
+
+  cancelEdit(messageEl);
+}
+
+chatBox.addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+
+  const messageEl = e.target.closest(".message");
+  if (!messageEl) return;
+
+  const messageUid = messageEl.dataset.uid;
+  const currentUid = auth.currentUser?.uid;
+  if (!currentUid || messageUid !== currentUid) return;
+
+  const action = btn.dataset.action;
+
+  if (action === "edit") {
+    startEdit(messageEl);
+    return;
+  }
+
+  if (action === "cancel-edit") {
+    cancelEdit(messageEl);
+    return;
+  }
+
+  if (action === "save-edit") {
+    await saveEdit(messageEl);
+    return;
+  }
+
+  if (action === "delete") {
+    const ok = window.confirm("هل تريد حذف هذه الرسالة؟");
+    if (!ok) return;
+    const id = messageEl.dataset.id;
+    if (!id) return;
+    await deleteDoc(doc(db, "messages", id));
+  }
+});
 
 onAuthStateChanged(auth, (user) => {
   if (!user) {
@@ -51,9 +199,9 @@ onAuthStateChanged(auth, (user) => {
 
   onSnapshot(messagesQ, (snap) => {
     chatBox.innerHTML = "";
-    snap.forEach((doc) => {
-      const data = doc.data();
-      addMessageToUI(data, data.uid === user.uid);
+    snap.forEach((messageDoc) => {
+      const data = messageDoc.data();
+      addMessageToUI(messageDoc.id, data, data.uid === user.uid);
     });
     chatBox.scrollTop = chatBox.scrollHeight;
   });
