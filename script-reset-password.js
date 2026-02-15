@@ -25,7 +25,7 @@ document.getElementById('reset-password-form').addEventListener('submit', functi
         user.password = newPassword;
         localStorage.setItem('users', JSON.stringify(users));
         alert("تم تعيين كلمة المرور بنجاح!");
-        window.location.href = "https://anasidrissi2005.github.io/my-chat-app/pagelogin.html"; // توجيه المستخدم إلى صفحة تسجيل الدخول
+        window.location.href = "./pagelogin.html"; // توجيه المستخدم إلى صفحة تسجيل الدخول
     } else {
         errorMessage.textContent = "البريد الإلكتروني غير صحيح.";
     }
