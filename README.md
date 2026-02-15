@@ -12,6 +12,11 @@ If the site is not yet visible, wait for the `pages.yml` workflow to finish succ
 
 - Images were removed. AppChat is now a **text-only chat**.
 - Supported features: text messages, optimistic sending, edit/delete (owner only), typing indicator, seen receipts, and display-name settings.
+- Chat startup waits for Auth readiness and can fallback to anonymous sign-in.
+
+## Auth setup note
+
+- Enable **Anonymous Auth** in Firebase Authentication if you want unauthenticated visitors to enter chat automatically.
 
 ## Firestore Security Rules (suggested)
 

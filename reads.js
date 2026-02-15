@@ -12,16 +12,22 @@ function nearBottom(chatBox) {
   return chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < 100;
 }
 
-export function createReadsManager({ db, auth, roomId, chatBox, getLatestMessageId, onReadsChange }) {
+export function createReadsManager({ db, auth, roomId, chatBox, getLatestMessageId, onReadsChange, onError }) {
   let lastWriteAt = 0;
   let lastWrittenMessageId = "";
 
   const readsQuery = query(collection(db, "reads"), where("roomId", "==", roomId));
-  const unsubReads = onSnapshot(readsQuery, (snap) => {
-    const readMap = new Map();
-    snap.forEach((readDoc) => readMap.set(readDoc.id, readDoc.data()));
-    onReadsChange(readMap);
-  });
+  const unsubReads = onSnapshot(
+    readsQuery,
+    (snap) => {
+      const readMap = new Map();
+      snap.forEach((readDoc) => readMap.set(readDoc.id, readDoc.data()));
+      onReadsChange(readMap);
+    },
+    (error) => {
+      if (onError) onError(error);
+    }
+  );
 
   async function maybeMarkSeen(force = false) {
     const user = auth.currentUser;
@@ -42,7 +48,7 @@ export function createReadsManager({ db, auth, roomId, chatBox, getLatestMessage
         roomId,
         uid: user.uid,
         displayName: user.displayName || user.email || "مستخدم",
-        lastSeenAt: serverTimestamp(),
+        lastReadAt: serverTimestamp(),
         lastSeenMessageId: latestMessageId,
       },
       { merge: true }

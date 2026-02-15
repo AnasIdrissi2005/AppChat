@@ -8,7 +8,7 @@ import {
   where,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-export function initTypingManager({ db, auth, roomId, inputEl, indicatorEl }) {
+export function initTypingManager({ db, auth, roomId, inputEl, indicatorEl, onError }) {
   let typingTimer = null;
   let debounceTimer = null;
   let lastState = false;
@@ -49,34 +49,31 @@ export function initTypingManager({ db, auth, roomId, inputEl, indicatorEl }) {
     where("isTyping", "==", true)
   );
 
-  const unsubTyping = onSnapshot(typingQuery, (snap) => {
-    const myUid = auth.currentUser?.uid;
-    const names = [];
+  const unsubTyping = onSnapshot(
+    typingQuery,
+    (snap) => {
+      const myUid = auth.currentUser?.uid;
+      const names = [];
 
-    snap.forEach((typingDoc) => {
-      const data = typingDoc.data();
-      if (data.uid && data.uid !== myUid) {
-        names.push(data.displayName || "مستخدم");
+      snap.forEach((typingDoc) => {
+        const data = typingDoc.data();
+        if (data.uid && data.uid !== myUid) names.push(data.displayName || "مستخدم");
+      });
+
+      if (!names.length) {
+        indicatorEl.textContent = "";
+      } else if (names.length === 1) {
+        indicatorEl.textContent = `${names[0]} يكتب...`;
+      } else if (names.length === 2) {
+        indicatorEl.textContent = `${names[0]} و ${names[1]} يكتبان...`;
+      } else {
+        indicatorEl.textContent = "عدة أشخاص يكتبون...";
       }
-    });
-
-    if (!names.length) {
-      indicatorEl.textContent = "";
-      return;
+    },
+    (error) => {
+      if (onError) onError(error);
     }
-
-    if (names.length === 1) {
-      indicatorEl.textContent = `${names[0]} يكتب...`;
-      return;
-    }
-
-    if (names.length === 2) {
-      indicatorEl.textContent = `${names[0]} و ${names[1]} يكتبان...`;
-      return;
-    }
-
-    indicatorEl.textContent = "عدة أشخاص يكتبون...";
-  });
+  );
 
   inputEl.addEventListener("input", handleInput);
 

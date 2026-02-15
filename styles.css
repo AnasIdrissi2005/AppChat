@@ -210,6 +210,16 @@
   cursor: pointer;
 }
 
+
+.chat-page .chat-error-banner {
+  display: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 0.85rem;
+}
+
 .chat-page .typing-indicator {
   min-height: 18px;
   color: #4b5563;
